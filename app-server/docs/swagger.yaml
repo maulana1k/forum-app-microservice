@@ -1,0 +1,79 @@
+basePath: /api/v1
+definitions:
+  dto.SigninRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: mypassword
+        type: string
+    type: object
+  dto.SignupRequest:
+    properties:
+      email:
+        example: john@example.com
+        type: string
+      password:
+        example: mypassword
+        type: string
+      username:
+        example: john_doe
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is a simple forum app server API.
+  title: Forum App API
+  version: "1.0"
+paths:
+  /signin:
+    post:
+      consumes:
+      - application/json
+      description: Signin with email and password
+      parameters:
+      - description: User credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SigninRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - Auth
+  /signup:
+    post:
+      consumes:
+      - application/json
+      description: Signup with username, email and password
+      parameters:
+      - description: User info
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SignupRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new user
+      tags:
+      - Auth
+swagger: "2.0"
