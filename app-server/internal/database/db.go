@@ -13,6 +13,7 @@ import (
 
 var DB *gorm.DB
 var StartTime time.Time
+var DBHost string
 
 func Uptime() string {
 	return time.Since(StartTime).String()
@@ -20,9 +21,16 @@ func Uptime() string {
 
 func Connect() {
 	StartTime = time.Now()
+	EnvMode := os.Getenv("DOCKER_ENV")
+	if EnvMode == "true" {
+		DBHost = "postgres"
+	} else {
+		DBHost = getEnv("POSTGRES_HOST", "localhost")
+	}
+
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
-		getEnv("POSTGRES_HOST", "localhost"),
+		DBHost,
 		getEnv("POSTGRES_USER", "forum"),
 		getEnv("POSTGRES_PASSWORD", "password"),
 		getEnv("POSTGRES_DB", "forumdb"),

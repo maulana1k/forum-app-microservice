@@ -1,7 +1,7 @@
 # Build stage
-FROM golang:1.21-alpine AS builder
+FROM golang:1.24-alpine AS builder
 
-WORKDIR /app
+WORKDIR /app-server
 
 COPY go.mod go.sum ./
 RUN go mod download
@@ -13,10 +13,10 @@ RUN go build -o main
 # Run stage
 FROM alpine:latest
 
-WORKDIR /app
+WORKDIR /app-server
 
-COPY --from=builder /app/main .
-COPY --from=builder /app/.env .env
+COPY --from=builder /app-server/main .
+COPY --from=builder /app-server/.env .env
 
 EXPOSE 8080
 
