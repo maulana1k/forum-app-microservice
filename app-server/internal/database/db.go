@@ -14,6 +14,7 @@ import (
 var DB *gorm.DB
 var StartTime time.Time
 var DBHost string
+var DSN string
 
 func Uptime() string {
 	return time.Since(StartTime).String()
@@ -28,7 +29,7 @@ func Connect() {
 		DBHost = getEnv("POSTGRES_HOST", "localhost")
 	}
 
-	dsn := fmt.Sprintf(
+	DSN = fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=UTC",
 		DBHost,
 		getEnv("POSTGRES_USER", "forum"),
@@ -38,15 +39,25 @@ func Connect() {
 	)
 
 	var err error
-	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	DB, err = gorm.Open(postgres.Open(DSN), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
 
 	log.Println("Connected to PostgreSQL successfully with GORM")
 
-	// Auto migrate User model
-	if err := DB.AutoMigrate(&models.User{}); err != nil {
+	// Auto migrate all models
+	tableMigration := []any{
+		&models.User{},
+		&models.UserProfile{},
+		&models.Post{},
+		&models.PostLikes{},
+		&models.Replies{},
+		&models.RepostByUser{},
+		&models.BookmarkByUser{},
+	}
+
+	if err := DB.AutoMigrate(tableMigration...); err != nil {
 		log.Fatalf("Failed to migrate models: %v", err)
 	}
 }

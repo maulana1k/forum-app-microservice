@@ -19,11 +19,6 @@ import (
 	_ "github.com/maulana1k/forum-app/docs"
 )
 
-// @title Forum App API
-// @version 1.0
-// @description This is a simple forum app server API.
-// @host localhost:8080
-// @BasePath /api/v1
 func Run() {
 
 	configs.LoadConfig()
@@ -36,8 +31,7 @@ func Run() {
 	app.Use(logger.New(configs.LoggerConfig))
 	app.Use(cors.New(configs.CorsConfig))
 
-	routes.SetupPublicRoutes(app)
-	routes.SetupAuthRoutes(app)
+	routes.SetupAPIRoutes(app)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
 

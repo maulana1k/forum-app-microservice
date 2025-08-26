@@ -9,6 +9,12 @@ import (
 	"github.com/maulana1k/forum-app/internal/database"
 )
 
+func SetupAPIRoutes(app *fiber.App) {
+	SetupPublicRoutes(app)
+	SetupAuthRoutes(app)
+	SetupPostRoutes(app)
+}
+
 func SetupPublicRoutes(app *fiber.App) {
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.JSON(fiber.Map{"Hello": "Dunia!"})
@@ -19,13 +25,14 @@ func SetupPublicRoutes(app *fiber.App) {
 }
 
 // HealthCheck godoc
-// @Summary Health check
-// @Description Checks if the server and database are running
-// @Tags Health
-// @Produce json
-// @Success 200 {object} map[string]string
-// @Failure 500 {object} map[string]string
-// @Router /health [get]
+//
+//	@Summary		Health check
+//	@Description	Checks if the server and database are running
+//	@Tags			Health
+//	@Produce		json
+//	@Success		200	{object}	map[string]string
+//	@Failure		500	{object}	map[string]string
+//	@Router			/health [get]
 func HealthCheck(c *fiber.Ctx) error {
 	// Default status
 	status := "ok"

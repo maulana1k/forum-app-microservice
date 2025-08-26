@@ -13,8 +13,17 @@ var jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 
 func Protected() fiber.Handler {
 	return jwtware.New(jwtware.Config{
-		SigningKey:   jwtware.SigningKey{Key: []byte("secret")},
+		SigningKey:   jwtware.SigningKey{Key: jwtSecret},
 		ErrorHandler: jwtError,
+		SuccessHandler: func(c *fiber.Ctx) error {
+			user := c.Locals("user").(*jwt.Token) // token is stored here by jwtware
+			claims := user.Claims.(jwt.MapClaims)
+
+			if uid, ok := claims["user_id"].(float64); ok { // JWT numbers are float64 by default
+				c.Locals("userID", uint(uid))
+			}
+			return c.Next()
+		},
 	})
 }
 
