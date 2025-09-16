@@ -1,48 +1,22 @@
 services:
-  # PostgreSQL
+  # Define shared DB environment once
+
+  # PostgreSQL container
   postgres:
     image: postgres:16-alpine
     container_name: postgres
-    environment:
-      POSTGRES_USER: dev
-      POSTGRES_PASSWORD: dev
-      POSTGRES_DB: forumdb
-      POSTGRES_PORT: 5432
+    environment: &db-env
+      POSTGRES_USER: "dev"
+      POSTGRES_PASSWORD: "dev"
+      POSTGRES_DB: "forumdb"
+      POSTGRES_PORT: "5432"
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U forum"]
+      test: ["CMD-SHELL", "pg_isready -U dev"]
       interval: 5s
-      retries: 5
-
-  # Redis
-  redis:
-    image: redis:7-alpine
-    container_name: forum-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redisdata:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      retries: 5
-
-  # RabbitMQ
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: forum-rabbitmq
-    ports:
-      - "5672:5672"
-      - "15672:15672" # Management UI
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
-    healthcheck:
-      test: ["CMD", "rabbitmqctl", "status"]
-      interval: 10s
       retries: 5
 
   # Go/Fiber app
@@ -52,11 +26,13 @@ services:
       dockerfile: Dockerfile
     container_name: app-server
     env_file:
-      - ./app-server/.env
+      - ./app-server/.env.docker
     ports:
       - "8080:8080"
     environment:
       DOCKER_ENV: "true"
+    networks:
+      - monitoring
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,8 +51,11 @@ services:
       - ./fastapi-server/.env
     ports:
       - "8000:8000"
+      - "50051:50051"
     environment:
       DOCKER_ENV: "true"
+      MLFLOW_URI: "http://mlflow:5000"
+      <<: *db-env
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,7 +64,94 @@ services:
       rabbitmq:
         condition: service_healthy
 
-  # Optional: Web frontend
+  # Redis
+  redis:
+    image: redis:7-alpine
+    container_name: forum-redis
+    environment: &redis-env
+      REDIS_HOST: "forum-redis"
+      REDIS_PORT: "6379"
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 5
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment: &rabbit-env
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBIT_HOST: "rabbitmq"
+      RABBIT_PORT: "5672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    networks:
+      - monitoring
+
+  # MLflow Tracking Server
+  mlflow:
+    build:
+      context: ./airflow
+    container_name: mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - airflow:/mlruns
+    environment:
+      MLFLOW_TRACKING_URI: "http://mlflow:5000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:5000\")' || exit 1"]
+      interval: 5s
+      retries: 5
+
+    # MinIO (Object Storage)
+  minio:
+    image: minio/minio
+    container_name: minio
+    ports:
+      - "9000:9000"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data
+    volumes:
+      - minio:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      retries: 5
+
+
+  # Web frontend
   web:
     build:
       context: ./web
@@ -97,3 +163,9 @@ services:
 volumes:
   pgdata:
   redisdata:
+  airflow:
+  minio:
+
+networks:
+  monitoring:
+    driver: bridge

@@ -1,4 +1,4 @@
-basePath: /api/v1
+basePath: /api
 definitions:
   dto.CreatePostRequest:
     properties:
@@ -9,7 +9,7 @@ definitions:
       image_url:
         type: string
       quoted_post_id:
-        type: integer
+        type: string
       tags:
         type: string
     required:
@@ -43,14 +43,29 @@ definitions:
       total_pages:
         type: integer
     type: object
+  dto.PostAuthor:
+    properties:
+      avatar_url:
+        type: string
+      bio:
+        type: string
+      display_name:
+        type: string
+      id:
+        type: string
+      username:
+        type: string
+    type: object
   dto.PostResponse:
     properties:
+      author:
+        $ref: '#/definitions/dto.PostAuthor'
       content:
         type: string
       created_at:
         type: string
       id:
-        type: integer
+        type: string
       image_url:
         type: string
       is_bookmarked:
@@ -64,7 +79,6 @@ definitions:
       quoted_post:
         type: string
       replies:
-        description: Author      *UserResponse   `json:"author,omitempty"`
         items:
           $ref: '#/definitions/dto.ReplyResponse'
         type: array
@@ -93,22 +107,22 @@ definitions:
   dto.SigninRequest:
     properties:
       email:
-        example: john@example.com
+        example: admin@example.com
         type: string
       password:
-        example: mypassword
+        example: admin
         type: string
     type: object
   dto.SignupRequest:
     properties:
       email:
-        example: john@example.com
+        example: admin@example.com
         type: string
       password:
-        example: mypassword
+        example: admin
         type: string
       username:
-        example: john_doe
+        example: admin
         type: string
     type: object
   dto.UpdatePostRequest:
@@ -120,6 +134,23 @@ definitions:
       image_url:
         type: string
       tags:
+        type: string
+    type: object
+  dto.UserResponse:
+    properties:
+      avatarUrl:
+        type: string
+      bio:
+        type: string
+      createdAt:
+        type: string
+      displayName:
+        type: string
+      id:
+        type: string
+      location:
+        type: string
+      updatedAt:
         type: string
     type: object
 host: localhost:8080
@@ -136,7 +167,28 @@ info:
   title: Forum App API
   version: "1.0"
 paths:
-  /auth/signin:
+  /health:
+    get:
+      description: Checks if the server and database are running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - Health
+  /v1/auth/signin:
     post:
       consumes:
       - application/json
@@ -160,7 +212,7 @@ paths:
       summary: Login user
       tags:
       - Auth
-  /auth/signup:
+  /v1/auth/signup:
     post:
       consumes:
       - application/json
@@ -184,28 +236,7 @@ paths:
       summary: Create a new user
       tags:
       - Auth
-  /health:
-    get:
-      description: Checks if the server and database are running
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Health check
-      tags:
-      - Health
-  /posts:
+  /v1/posts/:
     get:
       consumes:
       - application/json
@@ -270,11 +301,11 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       security:
-      - Bearer: []
+      - BearerAuth: []
       summary: Create a new post
       tags:
       - Posts
-  /posts/{id}:
+  /v1/posts/{id}:
     delete:
       consumes:
       - application/json
@@ -284,7 +315,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -311,7 +342,7 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       security:
-      - Bearer: []
+      - BearerAuth: []
       summary: Delete a post
       tags:
       - Posts
@@ -324,7 +355,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -356,7 +387,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       - description: Updated post data
         in: body
         name: post
@@ -391,52 +422,11 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       security:
-      - Bearer: []
+      - BearerAuth: []
       summary: Update a post
       tags:
       - Posts
-  /posts/{id}/bookmark:
-    post:
-      consumes:
-      - application/json
-      description: Bookmark a post by its ID
-      parameters:
-      - description: Post ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      security:
-      - Bearer: []
-      summary: Bookmark a post
-      tags:
-      - Posts
-  /posts/{id}/like:
+  /v1/posts/{id}/like:
     post:
       consumes:
       - application/json
@@ -446,7 +436,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -473,89 +463,11 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       security:
-      - Bearer: []
+      - BearerAuth: []
       summary: Like a post
       tags:
       - Posts
-  /posts/{id}/repost:
-    post:
-      consumes:
-      - application/json
-      description: Repost a post by its ID
-      parameters:
-      - description: Post ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      security:
-      - Bearer: []
-      summary: Repost a post
-      tags:
-      - Posts
-  /posts/{id}/unbookmark:
-    delete:
-      consumes:
-      - application/json
-      description: Remove bookmark from a previously bookmarked post
-      parameters:
-      - description: Post ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      security:
-      - Bearer: []
-      summary: Remove bookmark from a post
-      tags:
-      - Posts
-  /posts/{id}/unlike:
+  /v1/posts/{id}/unlike:
     delete:
       consumes:
       - application/json
@@ -565,7 +477,7 @@ paths:
         in: path
         name: id
         required: true
-        type: integer
+        type: string
       produces:
       - application/json
       responses:
@@ -588,48 +500,11 @@ paths:
           schema:
             $ref: '#/definitions/dto.ErrorResponse'
       security:
-      - Bearer: []
+      - BearerAuth: []
       summary: Unlike a post
       tags:
       - Posts
-  /posts/{id}/unrepost:
-    delete:
-      consumes:
-      - application/json
-      description: Remove repost from a previously reposted post
-      parameters:
-      - description: Post ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/dto.ErrorResponse'
-      security:
-      - Bearer: []
-      summary: Remove repost from a post
-      tags:
-      - Posts
-  /posts/user/{user_id}:
+  /v1/posts/user/{id}:
     get:
       consumes:
       - application/json
@@ -637,9 +512,9 @@ paths:
       parameters:
       - description: User ID
         in: path
-        name: user_id
+        name: id
         required: true
-        type: integer
+        type: string
       - default: 1
         description: Page number
         in: query
@@ -668,6 +543,99 @@ paths:
       summary: Get posts by user ID
       tags:
       - Posts
+  /v1/recommendation/posts:
+    get:
+      description: Retrieve personalized posts feed based on userID and topic
+      parameters:
+      - description: User ID
+        in: query
+        name: user_id
+        required: true
+        type: string
+      - description: Topic filter
+        in: query
+        name: topic
+        type: string
+      - description: Max number of posts
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.PostResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get recommended posts for user
+      tags:
+      - Recommendations
+  /v1/users/:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a list of all user profiles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.UserResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get all user profiles
+      tags:
+      - Users
+  /v1/users/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific user profile by its UUID
+      parameters:
+      - description: User UUID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dto.ErrorResponse'
+      summary: Get a user by UUID
+      tags:
+      - Users
 securityDefinitions:
   BearerAuth:
     in: header

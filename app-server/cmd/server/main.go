@@ -10,30 +10,51 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/monitor"
+	"github.com/gofiber/fiber/v2/middleware/pprof"
 	"github.com/gofiber/swagger"
-	"github.com/maulana1k/forum-app/internal/configs"
-	"github.com/maulana1k/forum-app/internal/database"
-	"github.com/maulana1k/forum-app/internal/routes"
+
+	"github.com/maulana1k/forum-app/internal/app/container"
+	"github.com/maulana1k/forum-app/internal/app/middleware"
+	"github.com/maulana1k/forum-app/internal/app/routes"
+	"github.com/maulana1k/forum-app/internal/config"
+	"github.com/maulana1k/forum-app/internal/pkg/utils"
+	"github.com/maulana1k/forum-app/internal/provider/broker"
+	"github.com/maulana1k/forum-app/internal/provider/database"
+	"github.com/maulana1k/forum-app/internal/provider/grpc"
 
 	_ "github.com/maulana1k/forum-app/docs"
 )
 
 func Run() {
 
-	configs.LoadConfig()
+	cfg := config.LoadConfig()
+	/*
 
-	database.Connect()
-	defer database.Close()
+	 */
+	grpc := grpc.NewGRPCClient(cfg.GRPCAddress)
+	db := database.NewDBInstance(cfg.DBUri)
+	broker := broker.NewRabbitMQ(cfg.BrokerAddress)
+	c := container.NewContainer(db.DB, grpc, broker)
+	// prometheus := fiberprometheus.New("forum_app")
+	defer db.Close()
 
-	app := fiber.New(configs.AppConfig)
+	utils.InitLogger()
 
-	app.Use(logger.New(configs.LoggerConfig))
-	app.Use(cors.New(configs.CorsConfig))
+	app := fiber.New(cfg.AppConfig)
+	// prometheus.RegisterAt(app, "/metrics")
 
-	routes.SetupAPIRoutes(app)
+	// app.Use(prometheus.Middleware)
+	app.Use(middleware.LogrusMiddleware)
+	app.Use(cors.New(cfg.CorsConfig))
+	app.Use(pprof.New())
+
+	routes.Register(app, c)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
+
+	app.Get("/metrics", monitor.New(monitor.Config{Title: "Forum App Metrics", Refresh: time.Second}))
+	// app.Get("/metrics", adaptor.HTTPHandlerFunc(promhttp.Handler().ServeHTTP))
 
 	go func() {
 		if err := app.Listen(":8080"); err != nil {

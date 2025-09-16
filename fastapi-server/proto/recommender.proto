@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option go_package = "/recommender";
+
+package recommender;
+
+service RecommenderService {
+  rpc GetRecommendedPosts (RecommendationRequest) returns (RecommendationResponse);
+}
+
+message RecommendationRequest {
+  string user_id = 1;
+  string topic = 2; // optional topic filter
+  int32 limit = 3;  // optional
+}
+
+message PostItem {
+  string post_id = 1;
+  string content = 2;
+  string author_id = 3;
+}
+
+message RecommendationResponse {
+  repeated PostItem posts = 1;
+}

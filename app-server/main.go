@@ -1,9 +1,6 @@
 package main
 
 import (
-	"log"
-
-	"github.com/joho/godotenv"
 	"github.com/maulana1k/forum-app/cmd/server"
 )
 
@@ -26,7 +23,7 @@ import (
 // @license.url     https://opensource.org/licenses/MIT
 //
 // @host            localhost:8080
-// @BasePath        /api/v1
+// @BasePath        /api
 //
 // @securityDefinitions.apikey BearerAuth
 // @in header
@@ -34,9 +31,17 @@ import (
 //
 // @schemes         http
 func main() {
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found, using default values")
-	}
+	// env := os.Getenv("APP_ENV")
+	// if env == "" {
+	// 	env = "development" // default
+	// }
+
+	// envFile := ".env." + env
+	// if err := godotenv.Load(envFile); err != nil {
+	// 	log.Printf("No %s file found, using system env", envFile)
+	// } else {
+	// 	log.Printf("Loaded environment from %s", envFile)
+	// }
 
 	server.Run()
 }

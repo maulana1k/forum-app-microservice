@@ -1,0 +1,7 @@
+apache-airflow==2.8.0
+mlflow
+torch
+transformers
+pandas
+boto3
+minio

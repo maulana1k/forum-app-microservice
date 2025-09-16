@@ -24,7 +24,39 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/signin": {
+        "/health": {
+            "get": {
+                "description": "Checks if the server and database are running",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/auth/signin": {
             "post": {
                 "description": "Signin with email and password",
                 "consumes": [
@@ -61,7 +93,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/signup": {
+        "/v1/auth/signup": {
             "post": {
                 "description": "Signup with username, email and password",
                 "consumes": [
@@ -98,39 +130,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/health": {
-            "get": {
-                "description": "Checks if the server and database are running",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Health"
-                ],
-                "summary": "Health check",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/posts": {
+        "/v1/posts/": {
             "get": {
                 "description": "Retrieve all posts with pagination support",
                 "consumes": [
@@ -183,7 +183,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "Bearer": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Create a new post with content, tags, and optional image",
@@ -236,7 +236,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/posts/user/{user_id}": {
+        "/v1/posts/user/{id}": {
             "get": {
                 "description": "Retrieve all posts created by a specific user",
                 "consumes": [
@@ -251,9 +251,9 @@ const docTemplate = `{
                 "summary": "Get posts by user ID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "User ID",
-                        "name": "user_id",
+                        "name": "id",
                         "in": "path",
                         "required": true
                     },
@@ -294,7 +294,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/posts/{id}": {
+        "/v1/posts/{id}": {
             "get": {
                 "description": "Retrieve a specific post by its ID",
                 "consumes": [
@@ -309,7 +309,7 @@ const docTemplate = `{
                 "summary": "Get a post by ID",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Post ID",
                         "name": "id",
                         "in": "path",
@@ -346,7 +346,7 @@ const docTemplate = `{
             "put": {
                 "security": [
                     {
-                        "Bearer": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Update an existing post (only by author)",
@@ -362,7 +362,7 @@ const docTemplate = `{
                 "summary": "Update a post",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Post ID",
                         "name": "id",
                         "in": "path",
@@ -420,7 +420,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "Bearer": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Delete an existing post (only by author)",
@@ -436,7 +436,7 @@ const docTemplate = `{
                 "summary": "Delete a post",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Post ID",
                         "name": "id",
                         "in": "path",
@@ -480,75 +480,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/posts/{id}/bookmark": {
+        "/v1/posts/{id}/like": {
             "post": {
                 "security": [
                     {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Bookmark a post by its ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Posts"
-                ],
-                "summary": "Bookmark a post",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Post ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/posts/{id}/like": {
-            "post": {
-                "security": [
-                    {
-                        "Bearer": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Like a post by its ID",
@@ -564,7 +500,7 @@ const docTemplate = `{
                 "summary": "Like a post",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Post ID",
                         "name": "id",
                         "in": "path",
@@ -608,133 +544,11 @@ const docTemplate = `{
                 }
             }
         },
-        "/posts/{id}/repost": {
-            "post": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Repost a post by its ID",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Posts"
-                ],
-                "summary": "Repost a post",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Post ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/posts/{id}/unbookmark": {
+        "/v1/posts/{id}/unlike": {
             "delete": {
                 "security": [
                     {
-                        "Bearer": []
-                    }
-                ],
-                "description": "Remove bookmark from a previously bookmarked post",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Posts"
-                ],
-                "summary": "Remove bookmark from a post",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Post ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/dto.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/posts/{id}/unlike": {
-            "delete": {
-                "security": [
-                    {
-                        "Bearer": []
+                        "BearerAuth": []
                     }
                 ],
                 "description": "Unlike a previously liked post",
@@ -750,7 +564,7 @@ const docTemplate = `{
                 "summary": "Unlike a post",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "Post ID",
                         "name": "id",
                         "in": "path",
@@ -788,40 +602,49 @@ const docTemplate = `{
                 }
             }
         },
-        "/posts/{id}/unrepost": {
-            "delete": {
+        "/v1/recommendation/posts": {
+            "get": {
                 "security": [
                     {
-                        "Bearer": []
+                        "BearerAuth": []
                     }
                 ],
-                "description": "Remove repost from a previously reposted post",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Retrieve personalized posts feed based on userID and topic",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "Posts"
+                    "Recommendations"
                 ],
-                "summary": "Remove repost from a post",
+                "summary": "Get recommended posts for user",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Post ID",
-                        "name": "id",
-                        "in": "path",
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "user_id",
+                        "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Topic filter",
+                        "name": "topic",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Max number of posts",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.PostResponse"
                             }
                         }
                     },
@@ -831,8 +654,84 @@ const docTemplate = `{
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/users/": {
+            "get": {
+                "description": "Retrieve a list of all user profiles",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get all user profiles",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/dto.UserResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/users/{id}": {
+            "get": {
+                "description": "Retrieve a specific user profile by its UUID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get a user by UUID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/dto.UserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/dto.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/dto.ErrorResponse"
                         }
@@ -863,7 +762,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "quoted_post_id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "tags": {
                     "type": "string"
@@ -913,9 +812,32 @@ const docTemplate = `{
                 }
             }
         },
+        "dto.PostAuthor": {
+            "type": "object",
+            "properties": {
+                "avatar_url": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "dto.PostResponse": {
             "type": "object",
             "properties": {
+                "author": {
+                    "$ref": "#/definitions/dto.PostAuthor"
+                },
                 "content": {
                     "type": "string"
                 },
@@ -923,7 +845,7 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "id": {
-                    "type": "integer"
+                    "type": "string"
                 },
                 "image_url": {
                     "type": "string"
@@ -944,7 +866,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "replies": {
-                    "description": "Author      *UserResponse   ` + "`" + `json:\"author,omitempty\"` + "`" + `",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/dto.ReplyResponse"
@@ -989,11 +910,11 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "john@example.com"
+                    "example": "admin@example.com"
                 },
                 "password": {
                     "type": "string",
-                    "example": "mypassword"
+                    "example": "admin"
                 }
             }
         },
@@ -1002,15 +923,15 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "john@example.com"
+                    "example": "admin@example.com"
                 },
                 "password": {
                     "type": "string",
-                    "example": "mypassword"
+                    "example": "admin"
                 },
                 "username": {
                     "type": "string",
-                    "example": "john_doe"
+                    "example": "admin"
                 }
             }
         },
@@ -1029,6 +950,32 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
+        },
+        "dto.UserResponse": {
+            "type": "object",
+            "properties": {
+                "avatarUrl": {
+                    "type": "string"
+                },
+                "bio": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "displayName": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "location": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
         }
     },
     "securityDefinitions": {
@@ -1044,7 +991,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "localhost:8080",
-	BasePath:         "/api/v1",
+	BasePath:         "/api",
 	Schemes:          []string{},
 	Title:            "Forum App API",
 	Description:      "This is a simple RESTful API for a forum application.",

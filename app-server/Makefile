@@ -11,6 +11,9 @@ MIGRATION_DIR = platform/migrations
 # Database URL (set via env or default)
 DB_URL ?= postgres://user:password@localhost:5432/forum_db?sslmode=disable
 
+swagger.up:
+	swag init -g main.go
+
 # -------------------------
 # Migration commands
 # -------------------------
